@@ -31,9 +31,9 @@ class Movie(db.Model):
     title: Mapped[str] = mapped_column(String(250), unique=True, nullable=False)
     year: Mapped[int] = mapped_column(Integer, nullable=False)
     description: Mapped[str] = mapped_column(String(250), nullable=False)
-    rating: Mapped[float] = mapped_column(Float, nullable=False)
-    ranking: Mapped[int] = mapped_column(Integer, nullable=False)
-    review: Mapped[str] = mapped_column(String(250), nullable=False)
+    rating: Mapped[float] = mapped_column(Float, nullable=True)
+    ranking: Mapped[int] = mapped_column(Integer, nullable=True)
+    review: Mapped[str] = mapped_column(String(250), nullable=True)
     img_url: Mapped[str] = mapped_column(String(250), nullable=False)
 
 
@@ -67,7 +67,6 @@ class AddMovieForm(FlaskForm):
 
 
 API_READ_ACCESS_TOKEN = os.environ.get('API_READ_ACCESS_TOKEN')
-endpoint = "https://api.themoviedb.org/3/search/movie"
 
 headers = {
     "accept": "application/json",
@@ -111,6 +110,7 @@ def delete():
 def add():
     form = AddMovieForm()
     if form.validate_on_submit():
+        endpoint = "https://api.themoviedb.org/3/search/movie"
         params = {
             "query": form.title.data
         }
@@ -119,6 +119,24 @@ def add():
         results = response.json()['results']
         return render_template('select.html', results=results)
     return render_template("add.html", form=form)
+
+
+@app.route("/find", methods=['GET', 'POST'])
+def find_movie():
+    tmdb_id = request.args.get("tmdb_id")
+    # 1100782 - Smile 2
+    endpoint = f"https://api.themoviedb.org/3/movie/{tmdb_id}"
+    response = requests.get(url=endpoint, headers=headers)
+    response.raise_for_status()
+    results = response.json()
+    with app.app_context():
+        new_movie = Movie(title=f"{results["title"]}",
+                          year=f"{results["release_date"][:4]}",
+                          description=f"{results["overview"]}",
+                          img_url=f"https://image.tmdb.org/t/p/w500{results["poster_path"]}")
+        db.session.add(new_movie)
+        db.session.commit()
+    return redirect(url_for('home'))
 
 
 if __name__ == '__main__':
