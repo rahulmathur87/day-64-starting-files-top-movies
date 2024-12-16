@@ -136,7 +136,8 @@ def find_movie():
                           img_url=f"https://image.tmdb.org/t/p/w500{results["poster_path"]}")
         db.session.add(new_movie)
         db.session.commit()
-    return redirect(url_for('home'))
+        movie_id = new_movie.id
+    return redirect(url_for('update', id=movie_id))
 
 
 if __name__ == '__main__':
