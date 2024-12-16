@@ -55,7 +55,10 @@ with app.app_context():
 
 @app.route("/")
 def home():
-    return render_template("index.html")
+    with app.app_context():
+        result = db.session.execute(db.select(Movie).order_by(Movie.title))
+        all_movies = result.scalars().all()
+    return render_template("index.html", all_movies=all_movies)
 
 
 if __name__ == '__main__':
