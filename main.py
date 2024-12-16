@@ -7,6 +7,8 @@ from flask_wtf import FlaskForm
 from wtforms import StringField, SubmitField, FloatField
 from wtforms.validators import DataRequired
 import requests
+import os
+
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = '8BYkEfBA6O6donzWlSihBXox7C0sKR6b'
@@ -64,6 +66,15 @@ class AddMovieForm(FlaskForm):
     submit = SubmitField("Add Movie")
 
 
+API_READ_ACCESS_TOKEN = os.environ.get('API_READ_ACCESS_TOKEN')
+endpoint = "https://api.themoviedb.org/3/search/movie"
+
+headers = {
+    "accept": "application/json",
+    "Authorization": API_READ_ACCESS_TOKEN
+}
+
+
 @app.route("/")
 def home():
     with app.app_context():
@@ -100,7 +111,13 @@ def delete():
 def add():
     form = AddMovieForm()
     if form.validate_on_submit():
-        return redirect(url_for('home'))
+        params = {
+            "query": form.title.data
+        }
+        response = requests.get(url=endpoint, headers=headers, params=params)
+        response.raise_for_status()
+        results = response.json()['results']
+        return render_template('select.html', results=results)
     return render_template("add.html", form=form)
 
 
