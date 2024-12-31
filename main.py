@@ -77,8 +77,14 @@ headers = {
 @app.route("/")
 def home():
     with app.app_context():
-        result = db.session.execute(db.select(Movie).order_by(Movie.title))
+        result = db.session.execute(db.select(Movie).order_by(Movie.rating))
         all_movies = result.scalars().all()
+
+        for i in range(len(all_movies)):
+            with app.app_context():
+                all_movies[i].ranking = int(len(all_movies) - i)
+                db.session.commit()
+
     return render_template("index.html", all_movies=all_movies)
 
 
